@@ -1,0 +1,177 @@
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.timeLabel {
+    text-align: center;
+}
+
+.timeBadge {
+    display: inline-block;
+    background: var(--secondary);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.3rem 1rem;
+    border-radius: 20px;
+    margin-bottom: 0.75rem;
+}
+
+.sectionTitle {
+    font-size: 1.3rem;
+    margin: 0 0 0.25rem 0;
+    color: var(--foreground);
+}
+
+.sectionSub {
+    font-size: 0.85rem;
+    color: #868e96;
+    margin: 0;
+}
+
+/* Field Groups */
+.fieldGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.fieldLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    font-size: 1rem;
+    color: var(--foreground);
+}
+
+.required {
+    background: #E63946;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.optionalBadge {
+    background: #868e96;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+/* Frequency Buttons */
+.frequencyOptions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.frequencyButton {
+    background: var(--surface-alt);
+    border: 2px solid var(--border);
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: var(--foreground);
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.frequencyButton:hover {
+    border-color: var(--primary);
+    background: rgba(255, 159, 28, 0.05);
+}
+
+.frequencyActive {
+    border-color: var(--primary);
+    background: rgba(255, 159, 28, 0.1);
+    color: var(--primary);
+    font-weight: 700;
+}
+
+/* Free Text */
+.freeTextArea {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    resize: vertical;
+    background: var(--surface-alt);
+    color: var(--foreground);
+    transition: border-color 0.2s;
+}
+
+.freeTextArea::placeholder {
+    color: #adb5bd;
+}
+
+.freeTextArea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* Submit */
+.submitButton {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: var(--radius);
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: var(--shadow-md);
+}
+
+.submitButton:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.submitButton:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.submittingText {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.spinnerSmall {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-left-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.note {
+    font-size: 0.8rem;
+    color: #868e96;
+    text-align: center;
+    margin: 0;
+}
