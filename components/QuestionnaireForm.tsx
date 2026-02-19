@@ -79,7 +79,7 @@ export default function QuestionnaireForm() {
             <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>
                     <span className={styles.required}>必須</span>
-                    ラーメンを食べに行く頻度を教えてください
+                    レッチリのラーメンはどの頻度で食べにきますか？
                 </label>
                 <div className={styles.frequencyOptions}>
                     {FREQUENCY_OPTIONS.map((opt) => (

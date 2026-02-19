@@ -1,85 +1,114 @@
 import { NextResponse } from 'next/server';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const FREQUENCY_MAP: Record<string, string> = {
-    first: '初めて訪問',
-    monthly: '月1回ほど来店',
-    weekly: '週1回ほど来店',
-    biweekly: '月2〜3回来店',
-    regular: 'ほぼ毎日来店',
-};
+// 星の数を日本語に変換
+function ratingToText(rating: number): string {
+    const map: Record<number, string> = { 5: '最高', 4: 'とても良い', 3: '普通', 2: 'やや不満', 1: '不満' };
+    return map[rating] || '';
+}
+
+function frequencyToText(frequency: string): string {
+    const map: Record<string, string> = {
+        first: '初めて', monthly: '月1回程度', weekly: '週1回程度',
+        biweekly: '月2〜3回', regular: 'ほぼ毎日',
+    };
+    return map[frequency] || '';
+}
 
 export async function POST(request: Request) {
+    const body = await request.json();
+    const { atmosphere, taste, recommendation, overall, frequency, freeText } = body;
+
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    // APIキーがない場合はテンプレート生成にフォールバック
+    if (!apiKey) {
+        const review = generateFallback(atmosphere, taste, recommendation, overall, frequency, freeText);
+        return NextResponse.json({ review });
+    }
+
     try {
-        const body = await request.json();
-        const { atmosphere, taste, recommendation, overall, frequency, freeText } = body;
+        // Gemini APIで生成
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-        let reviewText = "";
+        const prompt = `あなたはGoogleマップの口コミを書くアシスタントです。
+以下のアンケート回答をもとに、激辛ラーメン専門店「レッチリ」のGoogleクチコミとして自然な口コミ文を作成してください。
 
-        // --- Intro based on frequency ---
-        if (frequency === 'first') {
-            const intros = [
-                "初めて訪れましたが、期待以上の体験でした！",
-                "ずっと気になっていたお店にやっと行けました。",
-                "友人のおすすめで初来店しました。",
-            ];
-            reviewText += intros[Math.floor(Math.random() * intros.length)];
-        } else if (frequency === 'regular' || frequency === 'weekly') {
-            const intros = [
-                "何度も通っている常連ですが、いつ来ても安定の美味しさです。",
-                "毎回足を運んでいますが、やっぱりここのラーメンが一番です。",
-                "リピーターです。今回も大満足でした！",
-            ];
-            reviewText += intros[Math.floor(Math.random() * intros.length)];
-        } else {
-            const intros = [
-                "定期的に通っているお気に入りのお店です。",
-                "月に何度か訪れますが、毎回満足しています。",
-            ];
-            reviewText += intros[Math.floor(Math.random() * intros.length)];
-        }
+【アンケート回答】
+- 来店頻度: ${frequencyToText(frequency)}
+- ラーメンの味: ★${taste}（${ratingToText(taste)}）
+- 雰囲気・清潔感: ★${atmosphere}（${ratingToText(atmosphere)}）
+- おすすめ度: ★${recommendation}（${ratingToText(recommendation)}）
+- 総合評価: ★${overall}（${ratingToText(overall)}）
+${freeText ? `- お客様の声: 「${freeText}」` : ''}
 
-        // --- Taste ---
-        if (taste >= 4) {
-            const tastePhrases = [
-                "ラーメンのスープは絶品で、麺との相性も抜群です。",
-                "一口目からスープの深みに感動しました。麺のコシも完璧です。",
-                "とにかくラーメンが美味しい！スープを最後の一滴まで飲み干しました。",
-            ];
-            reviewText += tastePhrases[Math.floor(Math.random() * tastePhrases.length)];
-        } else if (taste === 3) {
-            reviewText += "ラーメンの味はしっかりしていて、安定感のある美味しさでした。";
-        } else {
-            reviewText += "ラーメンは普通に美味しかったです。";
-        }
+【ルール】
+- 150〜250文字程度で書いてください
+- 実際のGoogleクチコミのような自然な口調で書いてください
+- アンケートの各項目の評価をうまく文章に織り込んでください
+- お客様の声（自由記入）がある場合は、その内容を特に重視して反映してください
+- 「★」や「評価」などアンケートっぽい表現は使わないでください
+- 絵文字は使わないでください
+- 改行を適度に入れて読みやすくしてください`;
 
-        // --- Atmosphere ---
-        if (atmosphere >= 4) {
-            reviewText += "店内は清潔感があり、居心地がとても良かったです。";
-        } else if (atmosphere === 3) {
-            reviewText += "お店の雰囲気も落ち着いていて、ゆっくり食事を楽しめました。";
-        }
-
-        // --- Free text integration ---
-        if (freeText && freeText.trim().length > 0) {
-            reviewText += `特に「${freeText.trim()}」と感じました。`;
-        }
-
-        // --- Recommendation / Closing ---
-        if (recommendation >= 4) {
-            const closings = [
-                "\n\nラーメン好きな方には自信を持っておすすめできるお店です！また必ず来ます。",
-                "\n\n友人や家族にもぜひ紹介したいお店です。リピート確定です！",
-                "\n\nここのラーメンは間違いなくトップクラス。周りにもどんどん勧めていきたいです！",
-            ];
-            reviewText += closings[Math.floor(Math.random() * closings.length)];
-        } else if (recommendation === 3) {
-            reviewText += "\n\nまた機会があれば食べに来たいと思います。";
-        } else {
-            reviewText += "\n\nまた機会があれば立ち寄りたいです。";
-        }
+        const result = await model.generateContent(prompt);
+        const reviewText = result.response.text();
 
         return NextResponse.json({ review: reviewText });
     } catch (error) {
-        return NextResponse.json({ error: "Failed to generate review" }, { status: 500 });
+        console.error('Gemini API Error:', error);
+        // エラー時はテンプレートでフォールバック
+        const review = generateFallback(atmosphere, taste, recommendation, overall, frequency, freeText);
+        return NextResponse.json({ review });
     }
+}
+
+// APIキーがない場合やエラー時のフォールバック生成
+function generateFallback(
+    atmosphere: number, taste: number, recommendation: number,
+    overall: number, frequency: string, freeText: string
+): string {
+    const parts: string[] = [];
+
+    // 導入
+    if (frequency === 'first') {
+        parts.push("初めてレッチリさんに来ました！");
+    } else if (frequency === 'regular' || frequency === 'weekly') {
+        parts.push(`${frequencyToText(frequency)}通っているリピーターです。`);
+    } else {
+        parts.push(`${frequencyToText(frequency)}のペースで通っています。`);
+    }
+
+    // 味
+    if (taste >= 4) {
+        parts.push("ラーメンのスープは絶品で、麺との相性も抜群です。");
+    } else if (taste === 3) {
+        parts.push("ラーメンの味は安定した美味しさでした。");
+    } else {
+        parts.push("ラーメンの味は個人的にはもう少しかなと感じました。");
+    }
+
+    // 雰囲気
+    if (atmosphere >= 4) {
+        parts.push("店内は清潔感があり、居心地がとても良かったです。");
+    } else if (atmosphere === 3) {
+        parts.push("お店の雰囲気も落ち着いていて過ごしやすかったです。");
+    }
+
+    // 自由記入
+    if (freeText && freeText.trim().length > 0) {
+        parts.push(freeText.trim());
+    }
+
+    // 締め
+    if (recommendation >= 4 && overall >= 4) {
+        parts.push("\n\nラーメン好きなら絶対に行くべきお店です。また必ず来ます！");
+    } else if (recommendation >= 3 || overall >= 3) {
+        parts.push("\n\nまた機会があれば食べに来たいと思います。");
+    } else {
+        parts.push("\n\n今後のメニューの変化にも期待しています。");
+    }
+
+    return parts.join("");
 }
