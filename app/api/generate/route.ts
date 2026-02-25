@@ -32,6 +32,8 @@ export async function POST(request: Request) {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
+        const hasFreeText = freeText && freeText.trim().length > 0;
+
         const prompt = `あなたはGoogleマップの口コミを書くアシスタントです。
 以下のアンケート回答をもとに、激辛ラーメン専門店「レッチリ」のGoogleクチコミとして自然な口コミ文を作成してください。
 
@@ -41,13 +43,12 @@ export async function POST(request: Request) {
 - 雰囲気・清潔感: ★${atmosphere}（${ratingToText(atmosphere)}）
 - おすすめ度: ★${recommendation}（${ratingToText(recommendation)}）
 - 総合評価: ★${overall}（${ratingToText(overall)}）
-${freeText ? `- お客様の声: 「${freeText}」` : ''}
+${hasFreeText ? `- お客様の声: 「${freeText}」` : ''}
 
 【ルール】
 - 150〜250文字程度で書いてください
 - 実際のGoogleクチコミのような自然な口調で書いてください
-- アンケートの各項目の評価をうまく文章に織り込んでください
-- お客様の声（自由記入）がある場合は、その内容を特に重視して反映してください
+${hasFreeText ? `- 【最重要】お客様の声（自由記入）の内容を口コミの核として最も重視してください。星評価はあくまで補助的な参考情報として扱い、テキストに書かれた具体的な感想・意見・体験を中心に文章を構成してください。星評価とテキストの内容が矛盾する場合は、テキストの内容を優先してください。` : `- アンケートの各項目の評価をうまく文章に織り込んでください`}
 - 「★」や「評価」などアンケートっぽい表現は使わないでください
 - 絵文字は使わないでください
 - 改行を適度に入れて読みやすくしてください`;
@@ -96,8 +97,11 @@ function generateFallback(
         parts.push("お店の雰囲気も落ち着いていて過ごしやすかったです。");
     }
 
-    // 自由記入
-    if (freeText && freeText.trim().length > 0) {
+    // 自由記入（テキストがある場合はそちらを最重視）
+    const hasFreeText = freeText && freeText.trim().length > 0;
+    if (hasFreeText) {
+        // テキストがある場合、星評価による文章を減らしてテキスト内容を中心に据える
+        parts.length = Math.min(parts.length, 1); // 導入部分だけ残す
         parts.push(freeText.trim());
     }
 
